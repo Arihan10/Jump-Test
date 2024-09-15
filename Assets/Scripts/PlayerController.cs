@@ -18,9 +18,17 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] TextMeshProUGUI debugText;
     float maxTravelDist = 0.5f;
+
+    public TextMeshProUGUI clueText;
+    public TextMeshProUGUI taskText;
+
+    public JsonBreakdown breakdown;
+
+    int loc = 0;
+    
     
     // Start is called before the first frame update
-    void Start()
+    async void Start()
     {
         PV = GetComponent<PhotonView>(); 
 
@@ -31,14 +39,63 @@ public class PlayerController : MonoBehaviour
         }
 
         StartCoroutine(Ping());
+        //Input.location.lastData.latitude
+    }
 
-        UnityWebRequest request = new UnityWebRequest();
+
+    IEnumerator GetRequest(string uri) {
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(uri)) {
+
+            webRequest.SetRequestHeader("Content-Type", "application/json");
+            webRequest.SetRequestHeader("ngrok-skip-browser-warning", "69420");
+
+            // Request and wait for the desired page.
+            yield return webRequest.SendWebRequest();
+
+            string[] pages = uri.Split('/');
+            int page = pages.Length - 1;
+
+            if (webRequest.isNetworkError) {
+                Debug.Log(pages[page] + ": Error: " + webRequest.error);
+            } else {
+                Debug.Log(pages[page] + ":\nReceived: " + webRequest.downloadHandler.text);
+                var courses = webRequest.downloadHandler.text;
+                JsonBreakdown breakdown = JsonBreakdown.CreateFromJSON(courses);
+                print(breakdown.players.Count);
+                this.breakdown = breakdown;
+            }
+        }
+    }
+
+    [System.Serializable]
+    public class JsonBreakdown {
+        public List<Location> players;
+
+        public static JsonBreakdown CreateFromJSON(string jsonString) {
+            return JsonUtility.FromJson<JsonBreakdown>(jsonString);
+        }
+
+        [System.Serializable]
+        public class Location {
+            public string _id;
+            public string address;
+            public float lat;
+            public float longg;
+            public string clueType;
+            public string clueText;
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        if(breakdown == null) {
+            clueText.text = "Loading...";
+        } else {
+            //clueText.text = "OK!...";
+            clueText.text = breakdown.players[loc].clueText;
+
+        }
     }
 
     private void FixedUpdate() {
@@ -55,7 +112,7 @@ public class PlayerController : MonoBehaviour
            debugText.text = "A: " + (target - transform.position).magnitude + " \n B: " + maxTravelDist;
 
 
-            if ((target - transform.position).magnitude <= maxTravelDist || (target - transform.position).magnitude >= 40  * maxTravelDist) {
+            if ((target - transform.position).magnitude <= maxTravelDist || (target - transform.position).magnitude >= 10  * maxTravelDist) {
                 transform.position = target;
             } else {
 
@@ -86,8 +143,13 @@ public class PlayerController : MonoBehaviour
             yield break;
         } else {
             // Debug.Log("Location: " + Input.location.lastData.latitude + " " + Input.location.lastData.longitude + " " + Input.location.lastData.altitude + " " + Input.location.lastData.horizontalAccuracy + " " + Input.location.lastData.timestamp); 
-            location = true; 
+            location = true;
+
+            Coroutine c = StartCoroutine(GetRequest("https://0358-192-54-222-153.ngrok-free.app/locations/coordinates?lat=" + Input.location.lastData.latitude + "&long=" + Input.location.lastData.longitude + "&number=4"));
         }
+
+
+
 
         // Stops the location service if there is no need to query location updates continuously.
         // Input.location.Stop();
