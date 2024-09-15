@@ -5,7 +5,8 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
-using Mapbox.Utils; 
+using Mapbox.Utils;
+using UnityEngine.Networking;
 
 public class PlayerController : MonoBehaviour
 {
@@ -15,7 +16,8 @@ public class PlayerController : MonoBehaviour
 
     bool location = false;
 
-    [SerializeField] TextMeshProUGUI debugText; 
+    [SerializeField] TextMeshProUGUI debugText;
+    float maxTravelDist = 0.5f;
     
     // Start is called before the first frame update
     void Start()
@@ -28,7 +30,9 @@ public class PlayerController : MonoBehaviour
             return; 
         }
 
-        StartCoroutine(Ping()); 
+        StartCoroutine(Ping());
+
+        UnityWebRequest request = new UnityWebRequest();
     }
 
     // Update is called once per frame
@@ -43,12 +47,20 @@ public class PlayerController : MonoBehaviour
         if (location) {
             // Debug.Log("Location: " + Input.location.lastData.latitude + " " + Input.location.lastData.longitude + " " + Input.location.lastData.altitude + " " + Input.location.lastData.horizontalAccuracy + " " + Input.location.lastData.timestamp); 
 
-            debugText.text = "Location: " + Input.location.lastData.latitude + " " + Input.location.lastData.longitude + " " + Input.location.lastData.altitude + " " + Input.location.lastData.horizontalAccuracy + " " + Input.location.lastData.timestamp; 
+           // debugText.text = "Location: " + Input.location.lastData.latitude + " " + Input.location.lastData.longitude + " " + Input.location.lastData.altitude + " " + Input.location.lastData.horizontalAccuracy + " " + Input.location.lastData.timestamp; 
 
-            AbstractMap abstractMap = GameObject.Find("CitySimulationMap").GetComponent<AbstractMap>();
-            Vector3 newPos = abstractMap.GeoToWorldPosition(new Vector2d(Input.location.lastData.latitude, Input.location.lastData.longitude));
+            AbstractMap abstractMap = GameObject.Find("CitySimulatorMap").GetComponent<AbstractMap>();
+            Vector3 target = abstractMap.GeoToWorldPosition(new Vector2d(Input.location.lastData.latitude, Input.location.lastData.longitude));
 
-            transform.position = newPos; 
+           debugText.text = "A: " + (target - transform.position).magnitude + " \n B: " + maxTravelDist;
+
+
+            if ((target - transform.position).magnitude <= maxTravelDist || (target - transform.position).magnitude >= 40  * maxTravelDist) {
+                transform.position = target;
+            } else {
+
+                transform.position += (target - transform.position).normalized * maxTravelDist * Time.deltaTime;
+            }
         }
     }
 

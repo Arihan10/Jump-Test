@@ -1,8 +1,9 @@
 ﻿namespace Mapbox.Examples
 {
 	using UnityEngine;
+    using UnityEngine.EventSystems;
 
-	namespace Scripts.Utilities
+    namespace Scripts.Utilities
 	{
 		public class DragRotate : MonoBehaviour
 		{
@@ -16,12 +17,12 @@
 
 			void Update()
 			{
-				if (Input.GetMouseButtonDown(0))
+				if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
 				{
 					_startTouchPosition = Input.mousePosition;
 				}
 
-				if (Input.GetMouseButton(0))
+				if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
 				{
 					var dragDelta = Input.mousePosition - _startTouchPosition;
 					var axis = new Vector3(0f, -dragDelta.x * _multiplier, 0f);

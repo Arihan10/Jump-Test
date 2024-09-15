@@ -48,9 +48,12 @@
 
 		public void Update()
 		{
-			if (Input.GetMouseButtonDown(0) && EventSystem.current.IsPointerOverGameObject())
+            Debug.Log("Drag Started on UI 1");
+
+            if (Input.GetMouseButtonDown(0) && EventSystem.current.IsPointerOverGameObject())
 			{
 				_dragStartedOnUI = true;
+				Debug.Log("Drag Started on UI");
 			}
 
 			if (Input.GetMouseButtonUp(0))
